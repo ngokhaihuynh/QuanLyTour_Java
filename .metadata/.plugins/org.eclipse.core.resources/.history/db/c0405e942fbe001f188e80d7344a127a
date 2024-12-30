@@ -1,0 +1,110 @@
+package User;
+
+import Home.MainForm;
+import java.awt.EventQueue;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import database.DatabaseConnection;
+
+public class LoginForm extends JFrame {
+
+    private static final long serialVersionUID = 1L;
+    private JPanel contentPane;
+    private JTextField txtUsername;
+    private JPasswordField txtPassword;
+
+    public static void main(String[] args) {
+        EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                try {
+                    // Mở form đăng nhập đầu tiên
+                    LoginForm frame = new LoginForm();
+                    frame.setVisible(true);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
+    public LoginForm() {
+        setTitle("Đăng nhập");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setBounds(100, 100, 450, 300);
+        contentPane = new JPanel();
+        contentPane.setLayout(null);
+        setContentPane(contentPane);
+
+        JLabel lblUsername = new JLabel("Username:");
+        lblUsername.setBounds(50, 50, 100, 30);
+        contentPane.add(lblUsername);
+
+        txtUsername = new JTextField();
+        txtUsername.setBounds(150, 50, 200, 30);
+        contentPane.add(txtUsername);
+        txtUsername.setColumns(10);
+
+        JLabel lblPassword = new JLabel("Password:");
+        lblPassword.setBounds(50, 100, 100, 30);
+        contentPane.add(lblPassword);
+
+        txtPassword = new JPasswordField();
+        txtPassword.setBounds(150, 100, 200, 30);
+        contentPane.add(txtPassword);
+
+        JButton btnLogin = new JButton("Login");
+        btnLogin.setBounds(150, 150, 100, 30);
+        contentPane.add(btnLogin);
+
+        JButton btnCancel = new JButton("Cancel");
+        btnCancel.setBounds(260, 150, 100, 30);
+        contentPane.add(btnCancel);
+
+        // Action listener for "Login" button
+        btnLogin.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                String username = txtUsername.getText();
+                String password = new String(txtPassword.getPassword());
+
+                // Kết nối cơ sở dữ liệu và xác thực
+                try (Connection conn = DatabaseConnection.getConnection()) {
+                    String sql = "SELECT * FROM users WHERE username = ? AND password = ?";
+                    PreparedStatement pst = conn.prepareStatement(sql);
+                    pst.setString(1, username);
+                    pst.setString(2, password);
+
+                    ResultSet rs = pst.executeQuery();
+
+                    if (rs.next()) {
+                        // Nếu có kết quả, đăng nhập thành công
+                        JOptionPane.showMessageDialog(null, "Login successful!");
+                        // Đóng cửa sổ đăng nhập và mở cửa sổ tiếp theo (MainForm)
+                        dispose();  // Đóng cửa sổ đăng nhập
+                        MainForm mainForm = new MainForm();  // Tạo cửa sổ MainForm
+                        mainForm.setVisible(true);  // Mở cửa sổ MainForm
+                    } else {
+                        // Nếu không có kết quả, thông báo lỗi
+                        JOptionPane.showMessageDialog(null, "Invalid username or password.");
+                    }
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(null, "An error occurred while connecting to the database.");
+                }
+            }
+        });
+
+        // Action listener for "Cancel" button
+        btnCancel.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                // Đóng cửa sổ đăng nhập mà không làm gì
+                dispose();  // Đóng cửa sổ đăng nhập
+            }
+        });
+    }
+}

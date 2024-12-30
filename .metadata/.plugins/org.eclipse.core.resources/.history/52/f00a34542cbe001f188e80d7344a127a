@@ -1,0 +1,265 @@
+package Home;
+
+import User.UserManagement;
+import Customer.CustomerManagement;
+import Destinations.DestinationManagement;
+import Tour.TourManagement;
+import guides.GuideManagement;
+import Booking.BookingManagement;
+import Thongke.RevenuePanel;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+public class MainForm extends JFrame {
+
+    private static final long serialVersionUID = 1L;
+
+    private JPanel contentPanel; // Panel hiển thị nội dung
+    private JButton btnUserManagement;
+    private JButton btnCustomer;
+    private JButton btnDestinations;
+    private JButton btnTour;
+    private JButton btnGuides;
+    private JButton btnBookingTour;
+    private JButton btnThongke;
+    public MainForm() {
+        setTitle("Hệ thống quản lý du lịch");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(1000, 600);
+        setLocationRelativeTo(null);
+
+        // JSplitPane: Chia cửa sổ thành hai phần
+        JSplitPane splitPane = new JSplitPane();
+        splitPane.setDividerLocation(250); // Vị trí đường chia (bên trái rộng 250px)
+        splitPane.setDividerSize(5);
+        splitPane.setContinuousLayout(true);
+
+        // Panel danh mục (bên trái)
+        JPanel menuPanel = new JPanel();
+        menuPanel.setLayout(new BoxLayout(menuPanel, BoxLayout.Y_AXIS));
+        menuPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        menuPanel.setBackground(new Color(230, 230, 250));
+
+        // Nút "Quản lý người dùng"
+        btnUserManagement = new JButton("Quản lý người dùng");
+        customizeButton(btnUserManagement);
+        btnUserManagement.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                setActiveButton(btnUserManagement); // Thay đổi màu nút khi nhấn
+                showUserManagement();               // Hiển thị giao diện Quản lý người dùng
+            }
+        });
+        menuPanel.add(btnUserManagement);
+        menuPanel.add(Box.createRigidArea(new Dimension(0, 10))); // Thêm khoảng cách 10px
+
+        // Nút "Quản lý khách hàng"
+        btnCustomer = new JButton("Quản lý khách hàng");
+        customizeButton(btnCustomer);
+        btnCustomer.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                setActiveButton(btnCustomer);       // Thay đổi màu nút khi nhấn
+                showCustomerManagement();           // Hiển thị giao diện Quản lý khách hàng
+            }
+        });
+        menuPanel.add(btnCustomer);
+        menuPanel.add(Box.createRigidArea(new Dimension(0, 10))); // Thêm khoảng cách 10px
+
+        // Nút "Quản lý điểm đến"
+        btnDestinations = new JButton("Quản lý điểm đến");
+        customizeButton(btnDestinations);
+        btnDestinations.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                setActiveButton(btnDestinations);   // Thay đổi màu nút khi nhấn
+                showDestinationManagement();       // Hiển thị giao diện Quản lý điểm đến
+            }
+        });
+        menuPanel.add(btnDestinations);
+        
+        menuPanel.add(Box.createRigidArea(new Dimension(0, 10))); // Thêm khoảng cách 10px
+
+     // Nút "Quản lý hướng dẫn viên"
+        btnGuides = new JButton("Quản lý hướng dẫn viên");
+        customizeButton(btnGuides);
+        btnGuides.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                setActiveButton(btnGuides);   // Thay đổi màu nút khi nhấn
+                ShowGuides();       // Hiển thị giao diện Quản lý điểm đến
+            }
+        });
+        menuPanel.add(btnGuides);
+        
+        menuPanel.add(Box.createRigidArea(new Dimension(0, 10))); // Thêm khoảng cách 10px
+        
+        
+        // Nút "Quản lý điểm đến"
+        btnTour = new JButton("Quản lý Tour");
+        customizeButton(btnTour);
+        btnTour.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                setActiveButton(btnTour);   // Thay đổi màu nút khi nhấn
+                showTour();       // Hiển thị giao diện Quản lý điểm đến
+            }
+        });
+        menuPanel.add(btnTour);
+        menuPanel.add(Box.createRigidArea(new Dimension(0, 10))); // Thêm khoảng cách 10px
+        
+     // Nút "Quản lý đặt tours"
+        btnBookingTour = new JButton("Quản lý Đặt Tour");
+        customizeButton(btnBookingTour);
+        btnBookingTour.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                setActiveButton(btnBookingTour);   // Thay đổi màu nút khi nhấn
+                showBookingTour();       // Hiển thị giao diện Quản lý điểm đến
+            }
+        });
+        menuPanel.add(btnBookingTour);
+        menuPanel.add(Box.createRigidArea(new Dimension(0, 10))); // Thêm khoảng cách 10px
+        
+     // Nút "Quản lý thống kê"
+        btnThongke = new JButton("Thống kê doanh thu");
+        customizeButton(btnThongke);
+        btnThongke.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                setActiveButton(btnThongke);   // Thay đổi màu nút khi nhấn
+                showThongke();       // Hiển thị giao diện Quản lý điểm đến
+            }
+        });
+        menuPanel.add(btnThongke);
+        menuPanel.add(Box.createRigidArea(new Dimension(0, 10))); // Thêm khoảng cách 10px
+
+        // Panel hiển thị nội dung (bên phải)
+        contentPanel = new JPanel(new BorderLayout());
+        contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        JLabel defaultLabel = new JLabel("Chào mừng bạn đến với hệ thống quản lý du lịch", SwingConstants.CENTER);
+        defaultLabel.setFont(new Font("Tahoma", Font.BOLD, 16));
+        contentPanel.add(defaultLabel, BorderLayout.CENTER);
+
+        // Gán menuPanel và contentPanel vào splitPane
+        splitPane.setLeftComponent(menuPanel);
+        splitPane.setRightComponent(contentPanel);
+
+        // Thêm splitPane vào JFrame
+        getContentPane().add(splitPane);
+    }
+
+    // Phương thức tùy chỉnh các nút
+    private void customizeButton(JButton button) {
+        button.setAlignmentX(Component.CENTER_ALIGNMENT);
+        button.setFont(new Font("Tahoma", Font.PLAIN, 14));
+        button.setFocusPainted(false);
+        button.setBackground(new Color(72, 181, 163));  // Màu nền mặc định
+        button.setForeground(Color.WHITE);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.setMaximumSize(new Dimension(200, 40));
+        button.setBorder(BorderFactory.createLineBorder(new Color(42, 122, 110), 1));
+    }
+
+    // Phương thức thay đổi màu sắc nút khi nhấn
+    private void setActiveButton(JButton activeButton) {
+        // Đặt lại màu nền cho các nút còn lại
+        btnUserManagement.setBackground(new Color(72, 181, 163));
+        btnCustomer.setBackground(new Color(72, 181, 163));
+        btnDestinations.setBackground(new Color(72, 181, 163));
+        btnTour.setBackground(new Color(72, 181, 163));
+        btnGuides.setBackground(new Color(72, 181, 163));
+        btnBookingTour.setBackground(new Color(72, 181, 163));
+        btnThongke.setBackground(new Color(72, 181, 163));
+        // Đặt màu cam cho nút đang nhấn
+        activeButton.setBackground(new Color(255, 140, 0));
+    }
+
+    // Phương thức hiển thị giao diện Quản lý người dùng
+    private void showUserManagement() {
+        contentPanel.removeAll(); // Xóa nội dung cũ
+
+        UserManagement userManagement = new UserManagement(); // Tạo JPanel quản lý người dùng
+        contentPanel.add(userManagement, BorderLayout.CENTER); // Thêm vào contentPanel
+
+        contentPanel.revalidate(); // Cập nhật lại giao diện
+        contentPanel.repaint();   // Làm mới hiển thị
+    }
+
+    // Phương thức hiển thị giao diện Quản lý khách hàng
+    private void showCustomerManagement() {
+        contentPanel.removeAll(); // Xóa nội dung cũ
+
+        CustomerManagement customerManagement = new CustomerManagement(); // Tạo JPanel quản lý khách hàng
+        contentPanel.add(customerManagement, BorderLayout.CENTER); // Thêm vào contentPanel
+
+        contentPanel.revalidate(); // Cập nhật lại giao diện
+        contentPanel.repaint();   // Làm mới hiển thị
+    }
+
+    // Phương thức hiển thị giao diện Quản lý điểm đến
+    private void showDestinationManagement() {
+        contentPanel.removeAll(); // Xóa nội dung cũ
+
+        DestinationManagement destinationManagement = new DestinationManagement(); // Tạo JPanel quản lý điểm đến
+        contentPanel.add(destinationManagement, BorderLayout.CENTER); // Thêm vào contentPanel
+
+        contentPanel.revalidate(); // Cập nhật lại giao diện
+        contentPanel.repaint();   // Làm mới hiển thị
+    }
+    
+    private void showTour() {
+        contentPanel.removeAll(); // Xóa nội dung cũ
+
+        TourManagement tourManagement = new TourManagement(); // Tạo JPanel quản lý điểm đến
+        contentPanel.add(tourManagement, BorderLayout.CENTER); // Thêm vào contentPanel
+
+        contentPanel.revalidate(); // Cập nhật lại giao diện
+        contentPanel.repaint();   // Làm mới hiển thị
+    }
+
+    private void ShowGuides() {
+        contentPanel.removeAll(); // Xóa nội dung cũ
+
+        GuideManagement guideManagement = new GuideManagement(); // Tạo JPanel quản lý điểm đến
+        contentPanel.add(guideManagement, BorderLayout.CENTER); // Thêm vào contentPanel
+
+        contentPanel.revalidate(); // Cập nhật lại giao diện
+        contentPanel.repaint();   // Làm mới hiển thị
+    }
+    
+    private void showBookingTour() {
+        contentPanel.removeAll(); // Xóa nội dung cũ
+
+        BookingManagement bookingManagement = new BookingManagement(); // Tạo JPanel quản lý điểm đến
+        contentPanel.add(bookingManagement, BorderLayout.CENTER); // Thêm vào contentPanel
+
+        contentPanel.revalidate(); // Cập nhật lại giao diện
+        contentPanel.repaint();   // Làm mới hiển thị
+    }
+    
+    private void showBookingTour() {
+        contentPanel.removeAll(); // Xóa nội dung cũ
+
+        BookingManagement bookingManagement = new BookingManagement(); // Tạo JPanel quản lý điểm đến
+        contentPanel.add(bookingManagement, BorderLayout.CENTER); // Thêm vào contentPanel
+
+        contentPanel.revalidate(); // Cập nhật lại giao diện
+        contentPanel.repaint();   // Làm mới hiển thị
+    }
+    
+    
+    public static void main(String[] args) {
+        EventQueue.invokeLater(() -> {
+            try {
+                MainForm frame = new MainForm();
+                frame.setVisible(true);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+}

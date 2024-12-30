@@ -1,0 +1,83 @@
+-- Tạo cơ sở dữ liệu (nếu chưa có)
+CREATE DATABASE IF NOT EXISTS tour_management;
+
+-- Sử dụng cơ sở dữ liệu vừa tạo
+USE tour_management;
+
+-- Bảng destinations (Danh sách điểm đến)
+CREATE TABLE destinations (
+    id_destination INT AUTO_INCREMENT PRIMARY KEY,
+    destination_name VARCHAR(100),
+    country VARCHAR(50),
+    description TEXT,
+    image VARCHAR(255)
+);
+
+-- Bảng customers (Quản lý khách hàng)
+CREATE TABLE customers (
+    id_customer INT AUTO_INCREMENT PRIMARY KEY,
+    full_name VARCHAR(100),
+    email VARCHAR(100),
+    phone_number VARCHAR(20),
+    address VARCHAR(200),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Bảng tours (Thông tin tour)
+CREATE TABLE tours (
+    id_tour INT AUTO_INCREMENT PRIMARY KEY,
+    tour_name VARCHAR(100) NOT NULL,
+    id_destination INT,  -- Khóa ngoại liên kết với bảng destinations
+    price DECIMAL(10, 2) NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    description TEXT,
+    status ENUM('Trống', 'Đang diễn ra','Hoàn thành','Đã huỷ') DEFAULT 'Trống',
+    image_url VARCHAR(255),
+    FOREIGN KEY (id_destination) REFERENCES destinations(id_destination)  -- Ràng buộc khóa ngoại
+);
+
+-- Bảng guides (Quản lý hướng dẫn viên)
+CREATE TABLE guides (
+    id_guide INT AUTO_INCREMENT PRIMARY KEY,
+    full_name VARCHAR(100),
+    phone_number VARCHAR(20),
+    language VARCHAR(50),
+    status ENUM('Trống', 'Đang làm việc', 'Nghỉ việc') DEFAULT 'Trống'
+);
+
+-- Bảng bookings (Quản lý đặt tour)
+CREATE TABLE bookings (
+    id_booking INT AUTO_INCREMENT PRIMARY KEY,
+    id_customer INT,
+    id_tour INT,
+    booking_date DATE,
+    payment_status ENUM('Chưa thanh toán', 'Đã thanh toán'),
+    total_price DECIMAL(10, 2),
+    id_destination INT,
+    id_guide INT,
+    FOREIGN KEY (id_customer) REFERENCES customers(id_customer),
+    FOREIGN KEY (id_tour) REFERENCES tours(id_tour), 
+    FOREIGN KEY (id_guide) REFERENCES guides(id_guide),
+    FOREIGN KEY (id_destination) REFERENCES destinations(id_destination)  -- Khóa ngoại cho id_destination
+);
+
+-- Bảng payments (Quản lý thanh toán)
+CREATE TABLE payments (
+    id_payment INT AUTO_INCREMENT PRIMARY KEY,
+    id_booking INT,
+    payment_date DATE,
+    amount DECIMAL(10, 2),
+    payment_method ENUM('Tiền mặt', 'Thẻ', 'Chuyển khoản'),
+    FOREIGN KEY (id_booking) REFERENCES bookings(id_booking)
+);
+
+-- Bảng users (Quản lý tài khoản đăng nhập)
+CREATE TABLE users (
+    id_user INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(100),
+    role VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

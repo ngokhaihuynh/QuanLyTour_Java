@@ -1,0 +1,69 @@
+package Booking;
+
+import database.DatabaseConnection;
+
+import javax.swing.*;
+import java.awt.*;
+import java.sql.*;
+
+public class PaymentForm extends JFrame {
+    private JTextField txtAmount;
+    private JComboBox<String> cboPaymentMethod;
+    private JButton btnSavePayment;
+    private int bookingId;
+    private String customerName;
+    private double totalPrice;
+
+    public PaymentForm(int bookingId, String customerName, double totalPrice) {
+        this.bookingId = bookingId;
+        this.customerName = customerName;
+        this.totalPrice = totalPrice;
+        initUI();
+    }
+
+    private void initUI() {
+        setTitle("Thanh Toán");
+        setSize(400, 250);
+        setLayout(new GridLayout(5, 2));
+
+        JLabel lblAmount = new JLabel("Số Tiền:");
+        txtAmount = new JTextField(String.valueOf(totalPrice));
+
+        JLabel lblPaymentMethod = new JLabel("Phương Thức Thanh Toán:");
+        cboPaymentMethod = new JComboBox<>(new String[]{"cash", "credit_card", "bank_transfer"});
+
+        btnSavePayment = new JButton("Lưu Thanh Toán");
+
+        add(lblAmount);
+        add(txtAmount);
+        add(lblPaymentMethod);
+        add(cboPaymentMethod);
+        add(new JLabel());  // Empty space
+        add(btnSavePayment);
+
+        btnSavePayment.addActionListener(e -> savePayment());
+
+        setVisible(true);
+    }
+
+    private void savePayment() {
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            double amount = Double.parseDouble(txtAmount.getText());
+            String paymentMethod = (String) cboPaymentMethod.getSelectedItem();
+
+            String sql = "INSERT INTO payments (id_booking, payment_date, amount, payment_method) VALUES (?, ?, ?, ?)";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, bookingId);
+            pstmt.setDate(2, new java.sql.Date(System.currentTimeMillis()));
+            pstmt.setDouble(3, amount);
+            pstmt.setString(4, paymentMethod);
+
+            pstmt.executeUpdate();
+            JOptionPane.showMessageDialog(this, "Thanh toán thành công!");
+            dispose();  // Đóng form thanh toán sau khi lưu
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+}

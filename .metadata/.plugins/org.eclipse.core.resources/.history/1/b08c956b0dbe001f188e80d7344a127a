@@ -1,0 +1,125 @@
+package guides;
+
+import database.DatabaseConnection;
+
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.sql.*;
+
+public class GuideManagement extends JPanel {
+
+    private JTable table;
+    private DefaultTableModel tableModel;
+
+    public GuideManagement() {
+        setLayout(new BorderLayout());
+
+        // Tạo các cột cho JTable
+        String[] columnNames = {"ID", "Tên hướng dẫn viên", "Số điện thoại", "Ngôn ngữ", "Xếp hạng"};
+        tableModel = new DefaultTableModel(columnNames, 0);
+        table = new JTable(tableModel);
+        JScrollPane scrollPane = new JScrollPane(table);
+        add(scrollPane, BorderLayout.CENTER);
+
+        // Panel chứa các nút chức năng
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JButton btnAddGuide = new JButton("Thêm");
+        JButton btnEditGuide = new JButton("Sửa");
+        JButton btnDeleteGuide = new JButton("Xoá");
+
+        buttonPanel.add(btnAddGuide);
+        buttonPanel.add(btnEditGuide);
+        buttonPanel.add(btnDeleteGuide);
+
+        // Thêm tiêu đề phía trên bảng
+        JLabel lblNewLabel = new JLabel("Danh sách hướng dẫn viên", JLabel.CENTER);
+        lblNewLabel.setFont(new Font("Tahoma", Font.PLAIN, 18));
+        add(lblNewLabel, BorderLayout.NORTH);
+
+        // Thêm các nút vào vùng SOUTH
+        add(buttonPanel, BorderLayout.SOUTH);
+
+        // Load danh sách hướng dẫn viên từ cơ sở dữ liệu
+        loadGuideData();
+
+        // ActionListener cho nút Add Guide
+        btnAddGuide.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                new AddEditGuideForm(null, GuideManagement.this).setVisible(true);
+            }
+        });
+
+        // ActionListener cho nút Edit Guide
+        btnEditGuide.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                int selectedRow = table.getSelectedRow();
+                if (selectedRow != -1) {
+                    int guideId = (int) table.getValueAt(selectedRow, 0);
+                    new AddEditGuideForm(guideId, GuideManagement.this).setVisible(true);
+                } else {
+                    JOptionPane.showMessageDialog(null, "Vui lòng chọn hướng dẫn viên để chỉnh sửa!");
+                }
+            }
+        });
+
+        // ActionListener cho nút Delete Guide
+        btnDeleteGuide.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                int selectedRow = table.getSelectedRow();
+                if (selectedRow != -1) {
+                    int guideId = (int) table.getValueAt(selectedRow, 0);
+                    int confirm = JOptionPane.showConfirmDialog(null, "Bạn có chắc chắn muốn xoá hướng dẫn viên này?");
+                    if (confirm == JOptionPane.YES_OPTION) {
+                        deleteGuide(guideId);
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(null, "Vui lòng chọn hướng dẫn viên để xoá!");
+                }
+            }
+        });
+    }
+
+    // Load danh sách hướng dẫn viên từ cơ sở dữ liệu
+    public void loadGuideData() {
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT * FROM guides")) {
+
+            tableModel.setRowCount(0);
+            while (rs.next()) {
+                int id = rs.getInt("id_guide");
+                String name = rs.getString("full_name");
+                String phone = rs.getString("phone_number");
+                String language = rs.getString("language");
+                double rating = rs.getDouble("rating");
+                tableModel.addRow(new Object[]{id, name, phone, language, rating});
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Xoá hướng dẫn viên từ cơ sở dữ liệu
+    private void deleteGuide(int guideId) {
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pst = conn.prepareStatement("DELETE FROM guides WHERE id_guide = ?")) {
+
+            pst.setInt(1, guideId);
+
+            int rowsAffected = pst.executeUpdate();
+            if (rowsAffected > 0) {
+                JOptionPane.showMessageDialog(null, "Xoá hướng dẫn viên thành công!");
+                loadGuideData();
+            } else {
+                JOptionPane.showMessageDialog(null, "Có lỗi xảy ra khi xoá hướng dẫn viên.");
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+}

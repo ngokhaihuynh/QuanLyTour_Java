@@ -1,0 +1,168 @@
+package Booking;
+
+import database.DatabaseConnection;
+
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.awt.event.*;
+import java.sql.*;
+import java.util.Vector;
+
+public class BookingManagement extends JPanel {
+    private JTable tableBookings;
+    private JButton btnAddBooking;
+    private JButton btnEditBooking;
+    private JButton btnDeleteBooking;
+
+    public BookingManagement() {
+        setLayout(new BorderLayout());
+
+        // Tạo bảng để hiển thị booking
+        tableBookings = new JTable();
+        JScrollPane scrollPane = new JScrollPane(tableBookings);
+        add(scrollPane, BorderLayout.CENTER);
+
+        // Tạo nút thêm, sửa và xóa booking
+        JPanel panelButtons = new JPanel();
+        panelButtons.setLayout(new FlowLayout());
+
+        btnAddBooking = new JButton("Thêm Đặt Tour");
+        btnEditBooking = new JButton("Chỉnh Sửa");
+        btnDeleteBooking = new JButton("Xóa Đặt Tour");
+
+        panelButtons.add(btnAddBooking);
+        panelButtons.add(btnEditBooking);
+        panelButtons.add(btnDeleteBooking);
+
+        add(panelButtons, BorderLayout.SOUTH);
+
+        // Lấy danh sách booking
+        loadBookings();
+
+        // Action listener cho nút Thêm Đặt Tour
+        btnAddBooking.addActionListener(e -> openAddBookingForm());
+
+        // Action listener cho nút Chỉnh sửa
+        btnEditBooking.addActionListener(e -> openEditBookingForm());
+
+        // Action listener cho nút Xóa Đặt Tour
+        btnDeleteBooking.addActionListener(e -> deleteBooking());
+    }
+
+    // Lấy danh sách tất cả các booking từ cơ sở dữ liệu và hiển thị trên bảng
+    private void loadBookings() {
+        Connection conn = null;
+        Statement stmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DatabaseConnection.getConnection();
+            stmt = conn.createStatement();
+            String sql = "SELECT b.id_booking, c.full_name, t.tour_name, b.total_price, b.booking_date, g.full_name AS guide_name " +
+                         "FROM bookings b " +
+                         "JOIN customers c ON b.id_customer = c.id_customer " +
+                         "JOIN tours t ON b.id_tour = t.id_tour " +
+                         "JOIN guides g ON b.id_guide = g.id_guide";
+            rs = stmt.executeQuery(sql);
+
+            // Xây dựng model cho bảng
+            DefaultTableModel model = new DefaultTableModel();
+            model.addColumn("ID Booking");
+            model.addColumn("Tên Khách Hàng");
+            model.addColumn("Tour");
+            model.addColumn("Tổng Tiền");
+            model.addColumn("Ngày Đặt");
+            model.addColumn("Hướng Dẫn Viên");
+
+            while (rs.next()) {
+                Vector<String> row = new Vector<>();
+                row.add(rs.getString("id_booking"));
+                row.add(rs.getString("full_name"));
+                row.add(rs.getString("tour_name"));
+                row.add(rs.getString("total_price"));
+                row.add(rs.getString("booking_date"));
+                row.add(rs.getString("guide_name"));
+                model.addRow(row);
+            }
+
+            tableBookings.setModel(model);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (rs != null) rs.close();
+                if (stmt != null) stmt.close();
+                if (conn != null) conn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    // Mở form để thêm một booking mới
+    private void openAddBookingForm() {
+        AddEditBookingForm addForm = new AddEditBookingForm();
+        // Đảm bảo form hiện lên
+        JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
+        parentFrame.setVisible(false); // Ẩn frame chính khi mở form mới
+        addForm.setVisible(true);
+    }
+
+    // Mở form để chỉnh sửa booking đã chọn
+    private void openEditBookingForm() {
+        int selectedRow = tableBookings.getSelectedRow();
+        if (selectedRow != -1) {
+            int bookingId = Integer.parseInt((String) tableBookings.getValueAt(selectedRow, 0));
+            String customerName = (String) tableBookings.getValueAt(selectedRow, 1);
+            String tourName = (String) tableBookings.getValueAt(selectedRow, 2);
+            double totalPrice = Double.parseDouble((String) tableBookings.getValueAt(selectedRow, 3));
+            String bookingDate = (String) tableBookings.getValueAt(selectedRow, 4);
+            String guideName = (String) tableBookings.getValueAt(selectedRow, 5);
+
+            AddEditBookingForm editForm = new AddEditBookingForm(bookingId, customerName, tourName, bookingDate, guideName, totalPrice);
+            // Đảm bảo form hiện lên
+            JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
+            parentFrame.setVisible(false); // Ẩn frame chính khi mở form mới
+            editForm.setVisible(true);
+        } else {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn một booking để chỉnh sửa");
+        }
+    }
+
+    // Xóa một booking
+    private void deleteBooking() {
+        int selectedRow = tableBookings.getSelectedRow();
+        if (selectedRow != -1) {
+            int bookingId = Integer.parseInt((String) tableBookings.getValueAt(selectedRow, 0));
+            
+            int response = JOptionPane.showConfirmDialog(this, "Bạn có chắc chắn muốn xóa booking này?", "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
+            if (response == JOptionPane.YES_OPTION) {
+                Connection conn = null;
+                PreparedStatement pstmt = null;
+
+                try {
+                    conn = DatabaseConnection.getConnection();
+                    String sql = "DELETE FROM bookings WHERE id_booking = ?";
+                    pstmt = conn.prepareStatement(sql);
+                    pstmt.setInt(1, bookingId);
+                    pstmt.executeUpdate();
+
+                    JOptionPane.showMessageDialog(this, "Đặt tour đã được xóa!");
+                    loadBookings();  // Cập nhật lại danh sách bookings
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                } finally {
+                    try {
+                        if (pstmt != null) pstmt.close();
+                        if (conn != null) conn.close();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn một booking để xóa");
+        }
+    }
+}

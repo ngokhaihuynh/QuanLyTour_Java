@@ -1,0 +1,217 @@
+package Booking;
+
+import database.DatabaseConnection;
+
+import javax.swing.*;
+import java.awt.*;
+import java.sql.*;
+
+public class AddEditBookingForm extends JFrame {
+    private JTextField txtCustomerName;
+    private JComboBox<String> cboDestination;
+    private JComboBox<String> cboGuide;
+    private JComboBox<String> cboTour;
+    private JTextField txtTotalPrice;
+    private JComboBox<String> cboPaymentStatus;
+    private JButton btnSaveBooking;
+    private BookingManagement bookingManagementPanel;
+
+    private int bookingId;
+
+    public AddEditBookingForm(BookingManagement bookingManagementPanel) {
+        this.bookingId = -1;
+        this.bookingManagementPanel = bookingManagementPanel;
+        initUI();
+    }
+
+    public AddEditBookingForm(BookingManagement bookingManagementPanel, int bookingId, String customerName, String tourName,
+                              String bookingDate, String paymentStatus, String destinationName, String guideName, double totalPrice) {
+        this.bookingId = bookingId;
+        this.bookingManagementPanel = bookingManagementPanel;
+        initUI();
+
+        txtCustomerName.setText(customerName);
+        cboDestination.setSelectedItem(destinationName);
+        cboTour.setSelectedItem(tourName);
+        cboGuide.setSelectedItem(guideName);
+        cboPaymentStatus.setSelectedItem(paymentStatus);
+        txtTotalPrice.setText(String.valueOf(totalPrice));
+    }
+
+    private void initUI() {
+        setTitle("Thêm/Sửa Đặt Tour");
+        setSize(400, 450);
+        setLayout(new GridLayout(7, 2));
+
+        JLabel lblCustomerName = new JLabel("Tên khách hàng:");
+        txtCustomerName = new JTextField();
+        JLabel lblDestination = new JLabel("Điểm đến:");
+        cboDestination = new JComboBox<>();
+        JLabel lblGuide = new JLabel("Hướng dẫn viên:");
+        cboGuide = new JComboBox<>();
+        JLabel lblTour = new JLabel("Tour:");
+        cboTour = new JComboBox<>();
+        JLabel lblTotalPrice = new JLabel("Tổng tiền:");
+        txtTotalPrice = new JTextField();
+        txtTotalPrice.setEditable(false);
+        JLabel lblPaymentStatus = new JLabel("Trạng thái thanh toán:");
+        cboPaymentStatus = new JComboBox<>(new String[]{"Chưa thanh toán", "Đã thanh toán"});
+
+        btnSaveBooking = new JButton("Lưu Đặt Tour");
+
+        add(lblCustomerName);
+        add(txtCustomerName);
+        add(lblDestination);
+        add(cboDestination);
+        add(lblGuide);
+        add(cboGuide);
+        add(lblTour);
+        add(cboTour);
+        add(lblTotalPrice);
+        add(txtTotalPrice);
+        add(lblPaymentStatus);
+        add(cboPaymentStatus);
+        add(btnSaveBooking);
+
+        loadDestinations();
+        loadGuides();
+
+        cboDestination.addActionListener(e -> loadToursByDestination());
+        cboTour.addActionListener(e -> updateTotalPrice());
+        btnSaveBooking.addActionListener(e -> saveBooking());
+
+        setVisible(true);
+    }
+
+    private void loadDestinations() {
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement()) {
+            String sql = "SELECT * FROM destinations";
+            ResultSet rs = stmt.executeQuery(sql);
+            while (rs.next()) {
+                String destinationName = rs.getString("destination_name");
+                cboDestination.addItem(destinationName);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadGuides() {
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement()) {
+            String sql = "SELECT * FROM guides";
+            ResultSet rs = stmt.executeQuery(sql);
+            while (rs.next()) {
+                String guideName = rs.getString("full_name");
+                cboGuide.addItem(guideName);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadToursByDestination() {
+        String selectedDestination = (String) cboDestination.getSelectedItem();
+        if (selectedDestination == null) return;
+
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            String sql = "SELECT id_destination FROM destinations WHERE destination_name = ?";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, selectedDestination);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                int destinationId = rs.getInt("id_destination");
+
+                String tourSql = "SELECT * FROM tours WHERE id_destination = ?";
+                pstmt = conn.prepareStatement(tourSql);
+                pstmt.setInt(1, destinationId);
+                rs = pstmt.executeQuery();
+
+                cboTour.removeAllItems();
+                while (rs.next()) {
+                    String tourName = rs.getString("tour_name");
+                    cboTour.addItem(tourName);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void updateTotalPrice() {
+        int selectedTourIndex = cboTour.getSelectedIndex();
+        if (selectedTourIndex == -1) return;
+
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            String sql = "SELECT price FROM tours WHERE id_tour = ?";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, selectedTourIndex + 1);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                double totalPrice = rs.getDouble("price");
+                txtTotalPrice.setText(String.valueOf(totalPrice));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void saveBooking() {
+        String customerName = txtCustomerName.getText();
+        double totalPrice = Double.parseDouble(txtTotalPrice.getText());
+        String selectedDestination = (String) cboDestination.getSelectedItem();
+        int selectedTourIndex = cboTour.getSelectedIndex();
+        int selectedGuideIndex = cboGuide.getSelectedIndex();
+        String paymentStatus = (String) cboPaymentStatus.getSelectedItem();
+
+        if (customerName.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập tên khách hàng");
+            return;
+        }
+
+        if (selectedGuideIndex == -1) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn hướng dẫn viên");
+            return;
+        }
+
+       
+
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            String sql;
+            PreparedStatement pstmt;
+
+            if (bookingId == -1) {
+                sql = "INSERT INTO bookings (customer_name, tour_name, booking_date, payment_status, destination_name, guide_name, total_price) VALUES (?, ?, ?, ?, ?, ?, ?)";
+                pstmt = conn.prepareStatement(sql);
+                pstmt.setString(1, customerName);
+                pstmt.setString(2, cboTour.getSelectedItem().toString());
+                pstmt.setDate(3, new java.sql.Date(System.currentTimeMillis()));
+                pstmt.setString(4, paymentStatus);
+                pstmt.setString(5, selectedDestination);
+                pstmt.setString(6, cboGuide.getSelectedItem().toString());
+                pstmt.setDouble(7, totalPrice);
+            } else {
+                sql = "UPDATE bookings SET customer_name = ?, tour_name = ?, booking_date = ?, payment_status = ?, destination_name = ?, guide_name = ?, total_price = ? WHERE id_booking = ?";
+                pstmt = conn.prepareStatement(sql);
+                pstmt.setString(1, customerName);
+                pstmt.setString(2, cboTour.getSelectedItem().toString());
+                pstmt.setDate(3, new java.sql.Date(System.currentTimeMillis()));
+                pstmt.setString(4, paymentStatus);
+                pstmt.setString(5, selectedDestination);
+                pstmt.setString(6, cboGuide.getSelectedItem().toString());
+                pstmt.setDouble(7, totalPrice);
+                pstmt.setInt(8, bookingId);
+            }
+
+            pstmt.executeUpdate();
+            JOptionPane.showMessageDialog(this, "Lưu thành công.");
+            bookingManagementPanel.loadBookings();  // Reload bookings after saving
+            dispose();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+}

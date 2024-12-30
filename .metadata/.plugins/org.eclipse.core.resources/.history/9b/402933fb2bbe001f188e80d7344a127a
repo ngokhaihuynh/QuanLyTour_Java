@@ -1,0 +1,98 @@
+package Thongke;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.sql.*;
+import java.text.*;
+import java.util.*;
+
+public class RevenuePanel extends JPanel {
+    private JComboBox<String> cboMonthFilter;
+    private JButton btnGenerateReport;
+    private JTextArea txtReport;
+    private JLabel lblTotalRevenue;
+
+    public RevenuePanel() {
+        setLayout(new BorderLayout(10, 10));
+
+        // Tạo panel cho phần lọc doanh thu theo tháng
+        JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JLabel lblMonthFilter = new JLabel("Lọc theo tháng:");
+
+        cboMonthFilter = new JComboBox<>();
+        cboMonthFilter.addItem("Tất cả");
+        for (int i = 1; i <= 12; i++) {
+            cboMonthFilter.addItem(String.format("%02d", i));
+        }
+
+        filterPanel.add(lblMonthFilter);
+        filterPanel.add(cboMonthFilter);
+        
+        add(filterPanel, BorderLayout.NORTH);
+
+        // Panel để hiển thị tổng doanh thu
+        JPanel totalPanel = new JPanel();
+        lblTotalRevenue = new JLabel("Tổng doanh thu: 0 VND");
+        totalPanel.add(lblTotalRevenue);
+        add(totalPanel, BorderLayout.CENTER);
+
+        // TextArea để hiển thị chi tiết báo cáo
+        txtReport = new JTextArea(10, 30);
+        txtReport.setEditable(false);
+        add(new JScrollPane(txtReport), BorderLayout.SOUTH);
+
+        // Button để tạo báo cáo
+        btnGenerateReport = new JButton("Tạo báo cáo");
+        btnGenerateReport.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                generateReport();
+            }
+        });
+        add(btnGenerateReport, BorderLayout.EAST);
+    }
+
+    // Hàm tạo báo cáo doanh thu và tính tổng doanh thu
+    private void generateReport() {
+        String selectedMonth = (String) cboMonthFilter.getSelectedItem();
+        String query = "SELECT SUM(amount) AS total_amount FROM payments WHERE MONTH(payment_date) = ?";
+
+        double totalAmount = 0;
+        StringBuilder report = new StringBuilder();
+        report.append("Báo cáo doanh thu tháng ").append(selectedMonth).append(":\n");
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            if (!selectedMonth.equals("Tất cả")) {
+                stmt.setInt(1, Integer.parseInt(selectedMonth));
+            } else {
+                stmt.setInt(1, 0); // Nếu chọn "Tất cả", không lọc theo tháng
+            }
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    totalAmount = rs.getDouble("total_amount");
+                    report.append("Tổng doanh thu: ").append(totalAmount).append(" VND\n");
+                } else {
+                    report.append("Không có dữ liệu thanh toán cho tháng này.\n");
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Có lỗi khi lấy dữ liệu.");
+        }
+
+        txtReport.setText(report.toString());
+        lblTotalRevenue.setText("Tổng doanh thu: " + totalAmount + " VND");
+    }
+
+    public static void main(String[] args) {
+        JFrame frame = new JFrame("Thống kê doanh thu");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(600, 400);
+        frame.add(new RevenuePanel());
+        frame.setVisible(true);
+    }
+}

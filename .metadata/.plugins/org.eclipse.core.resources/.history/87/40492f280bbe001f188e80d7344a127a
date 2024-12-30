@@ -1,0 +1,16 @@
+package guides;
+
+import javax.swing.JPanel;
+
+public class GuideManagement extends JPanel {
+
+	private static final long serialVersionUID = 1L;
+
+	/**
+	 * Create the panel.
+	 */
+	public GuideManagement() {
+
+	}
+
+}

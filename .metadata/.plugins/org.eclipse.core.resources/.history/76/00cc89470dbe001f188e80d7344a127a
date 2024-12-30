@@ -1,0 +1,110 @@
+package guides;
+
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+public class AddEditGuideForm extends JFrame {
+    private JTextField txtFullName;
+    private JTextField txtPhoneNumber;
+    private JTextField txtLanguage;
+    private JTextField txtRating;
+    private JButton btnSave;
+    private JButton btnCancel;
+    private JPanel mainPanel;
+
+    private Connection connection;
+    private int guideId = -1; // Dùng để xác định trường hợp chỉnh sửa
+
+    public AddEditGuideForm(Connection connection, int guideId) {
+        this.connection = connection;
+        this.guideId = guideId;
+
+        setTitle(guideId == -1 ? "Add Guide" : "Edit Guide");
+        setContentPane(mainPanel);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setSize(400, 300);
+        setLocationRelativeTo(null);
+
+        btnSave.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                saveGuide();
+            }
+        });
+
+        btnCancel.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                dispose();
+            }
+        });
+
+        if (guideId != -1) {
+            loadGuideDetails();
+        }
+    }
+
+    private void saveGuide() {
+        String fullName = txtFullName.getText();
+        String phoneNumber = txtPhoneNumber.getText();
+        String language = txtLanguage.getText();
+        String ratingText = txtRating.getText();
+
+        try {
+            double rating = Double.parseDouble(ratingText);
+            if (rating < 0 || rating > 5) {
+                JOptionPane.showMessageDialog(this, "Rating must be between 0 and 5", "Invalid Input", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            String sql;
+            if (guideId == -1) { // Add new guide
+                sql = "INSERT INTO guides (full_name, phone_number, language, rating) VALUES (?, ?, ?, ?)";
+            } else { // Edit existing guide
+                sql = "UPDATE guides SET full_name = ?, phone_number = ?, language = ?, rating = ? WHERE id_guide = ?";
+            }
+
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, fullName);
+                statement.setString(2, phoneNumber);
+                statement.setString(3, language);
+                statement.setDouble(4, rating);
+
+                if (guideId != -1) {
+                    statement.setInt(5, guideId);
+                }
+
+                statement.executeUpdate();
+                JOptionPane.showMessageDialog(this, "Guide saved successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                dispose();
+            }
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "Rating must be a valid number", "Invalid Input", JOptionPane.ERROR_MESSAGE);
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error saving guide: " + ex.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void loadGuideDetails() {
+        try {
+            var query = "SELECT * FROM guides WHERE id_guide = ?";
+            try (var statement = connection.prepareStatement(query)) {
+                statement.setInt(1, guideId);
+                try (var resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        txtFullName.setText(resultSet.getString("full_name"));
+                        txtPhoneNumber.setText(resultSet.getString("phone_number"));
+                        txtLanguage.setText(resultSet.getString("language"));
+                        txtRating.setText(resultSet.getString("rating"));
+                    }
+                }
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error loading guide details: " + ex.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+}

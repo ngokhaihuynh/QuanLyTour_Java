@@ -1,0 +1,140 @@
+package guides;
+
+import database.DatabaseConnection;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.sql.*;
+
+public class AddEditGuideForm extends JFrame {
+
+    private static final long serialVersionUID = 1L;
+    private JPanel contentPane;
+    private JTextField txtName;
+    private JTextField txtSpecialization;
+    private JTextField txtPhone;
+    private JButton btnSave;
+    private boolean isEdit = false;  // Xác định là thêm hay sửa
+    private int guideId;  // Lưu ID hướng dẫn viên khi chỉnh sửa
+    private GuideManagement guideManagement; // Tham chiếu đến GuideManagement
+
+    // Constructor mặc định khi thêm hướng dẫn viên mới
+    public AddEditGuideForm(GuideManagement guideManagement) {
+        this.guideManagement = guideManagement;
+        setTitle("Thêm hướng dẫn viên");
+        initUI(); // Khởi tạo giao diện mặc định
+    }
+
+    // Constructor khi chỉnh sửa hướng dẫn viên
+    public AddEditGuideForm(int guideId, String name, String specialization, String phone, GuideManagement guideManagement) {
+        this();  // Gọi constructor mặc định để thiết lập form
+        setTitle("Sửa hướng dẫn viên");
+        this.isEdit = true;  // Đặt biến isEdit là true để biết là chỉnh sửa
+        this.guideId = guideId;
+        this.guideManagement = guideManagement;  // Lưu tham chiếu GuideManagement
+
+        // Điền thông tin hướng dẫn viên vào các trường
+        txtName.setText(name);
+        txtSpecialization.setText(specialization);
+        txtPhone.setText(phone);
+    }
+
+    // Hàm để lưu thông tin hướng dẫn viên vào cơ sở dữ liệu
+    private void saveGuide() {
+        String name = txtName.getText();
+        String specialization = txtSpecialization.getText();
+        String phone = txtPhone.getText();
+
+        if (name.isEmpty() || specialization.isEmpty() || phone.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Vui lòng điền đầy đủ thông tin.");
+            return;
+        }
+
+        Connection conn = null;
+        PreparedStatement pst = null;
+        try {
+            conn = DatabaseConnection.getConnection();
+
+            if (isEdit) { // Nếu là sửa thông tin hướng dẫn viên
+                String sql = "UPDATE guides SET full_name = ?, specialization = ?, phone_number = ? WHERE id_guide = ?";
+                pst = conn.prepareStatement(sql);
+                pst.setString(1, name);
+                pst.setString(2, specialization);
+                pst.setString(3, phone);
+                pst.setInt(4, guideId);
+            } else { // Nếu là thêm hướng dẫn viên mới
+                String sql = "INSERT INTO guides (full_name, specialization, phone_number) VALUES (?, ?, ?)";
+                pst = conn.prepareStatement(sql);
+                pst.setString(1, name);
+                pst.setString(2, specialization);
+                pst.setString(3, phone);
+            }
+
+            int rowsAffected = pst.executeUpdate();
+            if (rowsAffected > 0) {
+                JOptionPane.showMessageDialog(this, "Lưu thông tin hướng dẫn viên thành công!");
+                if (guideManagement != null) {
+                    guideManagement.loadGuideData(); // Tải lại dữ liệu trong GuideManagement
+                }
+                dispose(); // Đóng cửa sổ sau khi lưu thành công
+            } else {
+                JOptionPane.showMessageDialog(this, "Có lỗi xảy ra khi lưu thông tin hướng dẫn viên.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Có lỗi xảy ra khi lưu thông tin hướng dẫn viên.");
+        } finally {
+            try {
+                if (pst != null) pst.close();
+                if (conn != null) conn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    // Khởi tạo giao diện cho form
+    public void initUI() {
+        setTitle("Thêm hướng dẫn viên");
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setBounds(100, 100, 450, 300);
+        contentPane = new JPanel();
+        contentPane.setLayout(new GridLayout(4, 2, 10, 10)); // Sử dụng GridLayout để tổ chức các trường
+        contentPane.setBorder(new EmptyBorder(10, 10, 10, 10));
+
+        setContentPane(contentPane);
+
+        JLabel lblName = new JLabel("Tên hướng dẫn viên:");
+        contentPane.add(lblName);
+
+        txtName = new JTextField();
+        contentPane.add(txtName);
+        txtName.setColumns(10);
+
+        JLabel lblSpecialization = new JLabel("Chuyên môn:");
+        contentPane.add(lblSpecialization);
+
+        txtSpecialization = new JTextField();
+        contentPane.add(txtSpecialization);
+        txtSpecialization.setColumns(10);
+
+        JLabel lblPhone = new JLabel("Số điện thoại:");
+        contentPane.add(lblPhone);
+
+        txtPhone = new JTextField();
+        contentPane.add(txtPhone);
+        txtPhone.setColumns(10);
+
+        btnSave = new JButton("Lưu");
+        contentPane.add(btnSave);
+
+        btnSave.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                saveGuide();
+            }
+        });
+    }
+}

@@ -1,0 +1,83 @@
+package Booking;
+
+import database.DatabaseConnection;
+
+import javax.swing.*;
+import java.awt.*;
+import java.sql.*;
+
+public class PaymentForm extends JFrame {
+    private JTextField txtAmount;
+    private JComboBox<String> cboPaymentMethod;
+    private JButton btnSavePayment;
+    private int bookingId;
+    private String customerName;
+    private double totalPrice;
+    private BookingManagement bookingManagement;  // Thêm đối tượng BookingManagement
+
+    public PaymentForm(int bookingId, String customerName, double totalPrice, BookingManagement bookingManagement) {
+        this.bookingId = bookingId;
+        this.customerName = customerName;
+        this.totalPrice = totalPrice;
+        this.bookingManagement = bookingManagement;  // Lưu đối tượng BookingManagement
+        initUI();
+    }
+
+    private void initUI() {
+        setTitle("Thanh Toán");
+        setSize(400, 250);
+        setLayout(new GridLayout(5, 2));
+
+        JLabel lblAmount = new JLabel("Số Tiền:");
+        txtAmount = new JTextField(String.valueOf(totalPrice));
+
+        JLabel lblPaymentMethod = new JLabel("Phương Thức Thanh Toán:");
+        cboPaymentMethod = new JComboBox<>(new String[]{"cash", "credit_card", "bank_transfer"});
+
+        btnSavePayment = new JButton("Lưu Thanh Toán");
+
+        add(lblAmount);
+        add(txtAmount);
+        add(lblPaymentMethod);
+        add(cboPaymentMethod);
+        add(new JLabel());  // Empty space
+        add(btnSavePayment);
+
+        btnSavePayment.addActionListener(e -> savePayment());
+
+        setVisible(true);
+    }
+
+    private void savePayment() {
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            double amount = Double.parseDouble(txtAmount.getText());
+            String paymentMethod = (String) cboPaymentMethod.getSelectedItem();
+
+            // Lưu thông tin thanh toán vào bảng payments
+            String insertPaymentSQL = "INSERT INTO payments (id_booking, payment_date, amount, payment_method) VALUES (?, ?, ?, ?)";
+            PreparedStatement pstmt = conn.prepareStatement(insertPaymentSQL);
+            pstmt.setInt(1, bookingId);
+            pstmt.setDate(2, new java.sql.Date(System.currentTimeMillis()));  // Ngày thanh toán là ngày hiện tại
+            pstmt.setDouble(3, amount);
+            pstmt.setString(4, paymentMethod);
+            pstmt.executeUpdate();
+
+            // Cập nhật trạng thái thanh toán trong bảng bookings
+            String updatePaymentStatusSQL = "UPDATE bookings SET payment_status = 'paid' WHERE id_booking = ?";
+            pstmt = conn.prepareStatement(updatePaymentStatusSQL);
+            pstmt.setInt(1, bookingId);
+            pstmt.executeUpdate();
+
+            JOptionPane.showMessageDialog(this, "Thanh toán thành công!");
+
+            // Gọi phương thức loadBookings() từ BookingManagement để tải lại dữ liệu
+            bookingManagement.loadBookings();  // Tải lại bảng bookings
+
+            // Đóng form thanh toán sau khi lưu và cập nhật trạng thái
+            dispose();  
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Đã xảy ra lỗi trong quá trình thanh toán!");
+        }
+    }
+}

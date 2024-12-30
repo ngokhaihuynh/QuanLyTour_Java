@@ -1,0 +1,86 @@
+private void saveBooking() {
+    String customerName = txtCustomerName.getText();
+    double totalPrice = Double.parseDouble(txtTotalPrice.getText());
+    int selectedDestinationIndex = cboDestination.getSelectedIndex();
+    int selectedTourIndex = cboTour.getSelectedIndex();
+    int selectedGuideIndex = cboGuide.getSelectedIndex();
+    String paymentStatus = (String) cboPaymentStatus.getSelectedItem();  // Lấy trạng thái thanh toán
+
+    // Kiểm tra xem tên khách hàng có trống không
+    if (customerName.isEmpty()) {
+        JOptionPane.showMessageDialog(this, "Vui lòng nhập tên khách hàng");
+        return;
+    }
+
+    // Kiểm tra nếu có ID hướng dẫn viên hợp lệ
+    if (selectedGuideIndex == -1) {
+        JOptionPane.showMessageDialog(this, "Vui lòng chọn hướng dẫn viên");
+        return;
+    }
+
+    // Thay đổi giá trị của paymentStatus cho phù hợp với ENUM trong cơ sở dữ liệu
+    if (paymentStatus.equals("Chưa thanh toán")) {
+        paymentStatus = "unpaid";
+    } else if (paymentStatus.equals("Đã thanh toán")) {
+        paymentStatus = "paid";
+    }
+
+    try (Connection conn = DatabaseConnection.getConnection()) {
+        PreparedStatement pstmt;
+        ResultSet rs;
+
+        // Kiểm tra khách hàng
+        String checkCustomerSql = "SELECT id_customer FROM customers WHERE full_name = ?";
+        pstmt = conn.prepareStatement(checkCustomerSql);
+        pstmt.setString(1, customerName);
+        rs = pstmt.executeQuery();
+
+        int customerId = -1;
+        if (rs.next()) {
+            customerId = rs.getInt("id_customer");
+        } else {
+            // Thêm khách hàng mới vào cơ sở dữ liệu
+            String insertCustomerSql = "INSERT INTO customers (full_name) VALUES (?)";
+            pstmt = conn.prepareStatement(insertCustomerSql, Statement.RETURN_GENERATED_KEYS);
+            pstmt.setString(1, customerName);
+            pstmt.executeUpdate();
+            rs = pstmt.getGeneratedKeys();
+            if (rs.next()) {
+                customerId = rs.getInt(1);
+            }
+        }
+
+        // Kiểm tra xem hướng dẫn viên có tồn tại trong bảng guides không
+        String checkGuideSql = "SELECT id_guide FROM guides WHERE id_guide = ?";
+        pstmt = conn.prepareStatement(checkGuideSql);
+        pstmt.setInt(1, selectedGuideIndex + 1);  // Thêm 1 để lấy ID hợp lệ
+        rs = pstmt.executeQuery();
+
+        if (!rs.next()) {
+            JOptionPane.showMessageDialog(this, "Hướng dẫn viên không hợp lệ.");
+            return;
+        }
+
+        // Thêm booking vào cơ sở dữ liệu
+        String insertBookingSql = "INSERT INTO bookings (id_customer, id_tour, id_guide, total_price, booking_date, payment_status, id_destination) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        pstmt = conn.prepareStatement(insertBookingSql);
+        pstmt.setInt(1, customerId);
+        pstmt.setInt(2, selectedTourIndex + 1);  // Cập nhật id_tour
+        pstmt.setInt(3, selectedGuideIndex + 1);  // Cập nhật id_guide
+        pstmt.setDouble(4, totalPrice);
+        pstmt.setDate(5, new java.sql.Date(System.currentTimeMillis()));
+        pstmt.setString(6, paymentStatus);  // Lưu trạng thái thanh toán
+        pstmt.setInt(7, selectedDestinationIndex + 1);  // Cập nhật id_destination
+
+        pstmt.executeUpdate();
+        JOptionPane.showMessageDialog(this, "Booking thành công!");
+
+        // Tải lại dữ liệu vào form quản lý sau khi lưu thành công
+        bookingManagementPanel.loadBookings();
+
+        // Đóng form sau khi lưu thành công
+        dispose();
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+}

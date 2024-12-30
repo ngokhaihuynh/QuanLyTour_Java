@@ -1,0 +1,78 @@
+package User
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.sql.*;
+
+public class LoginForm extends JFrame {
+
+    private JTextField txtUsername;
+    private JPasswordField txtPassword;
+    private JButton btnLogin;
+
+    public LoginForm() {
+        // Cài đặt giao diện
+        setTitle("Login Form");
+        setSize(400, 300);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+
+        // Tạo các thành phần giao diện
+        txtUsername = new JTextField(20);
+        txtPassword = new JPasswordField(20);
+        btnLogin = new JButton("Login");
+
+        // Thêm hành động cho nút Login
+        btnLogin.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                String username = txtUsername.getText();
+                String password = new String(txtPassword.getPassword());
+
+                // Kết nối cơ sở dữ liệu và xác thực
+                try (Connection conn = DatabaseConnection.getConnection()) {
+                    String sql = "SELECT * FROM users WHERE username = ? AND password = ?";
+                    PreparedStatement pst = conn.prepareStatement(sql);
+                    pst.setString(1, username);
+                    pst.setString(2, password);
+
+                    ResultSet rs = pst.executeQuery();
+
+                    if (rs.next()) {
+                        // Nếu có kết quả, đăng nhập thành công
+                        JOptionPane.showMessageDialog(null, "Login successful!");
+
+                        // Đóng cửa sổ đăng nhập
+                        dispose();  // Đóng LoginForm
+
+                        // Mở cửa sổ MainForm
+                        MainForm mainForm = new MainForm();  // Tạo cửa sổ MainForm
+                        mainForm.setVisible(true);  // Mở cửa sổ MainForm
+                    } else {
+                        // Nếu không có kết quả, thông báo lỗi
+                        JOptionPane.showMessageDialog(null, "Invalid username or password.");
+                    }
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(null, "An error occurred while connecting to the database.");
+                }
+            }
+        });
+
+        // Thêm các thành phần vào JFrame
+        setLayout(new FlowLayout());
+        add(new JLabel("Username:"));
+        add(txtUsername);
+        add(new JLabel("Password:"));
+        add(txtPassword);
+        add(btnLogin);
+    }
+
+    public static void main(String[] args) {
+        // Hiển thị cửa sổ LoginForm
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                new LoginForm().setVisible(true);
+            }
+        });
+    }
+}

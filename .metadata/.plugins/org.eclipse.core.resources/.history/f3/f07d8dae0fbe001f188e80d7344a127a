@@ -1,0 +1,109 @@
+package guides;
+
+import database.DatabaseConnection;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.sql.*;
+
+public class AddEditGuideForm extends JFrame {
+
+    private JTextField txtFullName, txtPhoneNumber, txtLanguage;
+    private JButton btnSave, btnCancel;
+    private int guideId = -1; // Mặc định là thêm mới, nếu có id thì là sửa
+
+    public AddEditGuideForm(int guideId, String fullName, String phoneNumber, String language) {
+        this.guideId = guideId;
+
+        setTitle(guideId == -1 ? "Add Guide" : "Edit Guide");
+        setSize(400, 250);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setLocationRelativeTo(null);
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new GridLayout(4, 2));
+
+        panel.add(new JLabel("Full Name:"));
+        txtFullName = new JTextField();
+        panel.add(txtFullName);
+
+        panel.add(new JLabel("Phone Number:"));
+        txtPhoneNumber = new JTextField();
+        panel.add(txtPhoneNumber);
+
+        panel.add(new JLabel("Language:"));
+        txtLanguage = new JTextField();
+        panel.add(txtLanguage);
+
+        btnSave = new JButton(guideId == -1 ? "Add Guide" : "Save Changes");
+        btnCancel = new JButton("Cancel");
+
+        panel.add(btnSave);
+        panel.add(btnCancel);
+
+        add(panel, BorderLayout.CENTER);
+
+        if (guideId != -1) {
+            txtFullName.setText(fullName);
+            txtPhoneNumber.setText(phoneNumber);
+            txtLanguage.setText(language);
+        }
+
+        btnSave.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                saveGuide();
+            }
+        });
+
+        btnCancel.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                dispose();
+            }
+        });
+    }
+
+    private void saveGuide() {
+        String fullName = txtFullName.getText();
+        String phoneNumber = txtPhoneNumber.getText();
+        String language = txtLanguage.getText();
+
+        try {
+            Connection conn = DatabaseConnection.getConnection();
+            PreparedStatement pst;
+
+            if (guideId == -1) { // Add new guide
+                String sql = "INSERT INTO guides (full_name, phone_number, language) VALUES (?, ?, ?)";
+                pst = conn.prepareStatement(sql);
+                pst.setString(1, fullName);
+                pst.setString(2, phoneNumber);
+                pst.setString(3, language);
+            } else { // Edit existing guide
+                String sql = "UPDATE guides SET full_name = ?, phone_number = ?, language = ? WHERE id_guide = ?";
+                pst = conn.prepareStatement(sql);
+                pst.setString(1, fullName);
+                pst.setString(2, phoneNumber);
+                pst.setString(3, language);
+                pst.setInt(4, guideId);
+            }
+
+            int rowsAffected = pst.executeUpdate();
+            if (rowsAffected > 0) {
+                JOptionPane.showMessageDialog(this, guideId == -1 ? "Thêm thành công !" : "Cập nhật thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                dispose(); // Đóng form sau khi lưu
+            } else {
+                JOptionPane.showMessageDialog(this, "Lỗi lưu.", "Database Error", JOptionPane.ERROR_MESSAGE);
+            }
+
+            pst.close();
+            conn.close();
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error saving guide: " + ex.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+}

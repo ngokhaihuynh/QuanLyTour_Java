@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section name="Workbench">
+	<item key="hasShownOverlayPopupBefore" value="true"/>
+	<item key="replaceBarOpen" value="false"/>
+	<list key="searchhistory">
+		<item value="main"/>
+		<item value="generateReport"/>
+		<item value="initUI"/>
+		<item value="loadToursByDestination"/>
+		<item value="paid"/>
+		<item value="saveBooking"/>
+		<item value="loadBookings"/>
+		<item value="openAddBookingForm"/>
+		<item value="loadGuides"/>
+		<item value="addActionListener"/>
+		<item value="AddEditGuideForm "/>
+		<item value="specialization "/>
+		<item value="specialization"/>
+		<item value="btnEditDestination "/>
+		<item value="loadDestinationData"/>
+	</list>
+	<section name="org.eclipse.ui.texteditor.FindReplaceDialog">
+		<item key="selection" value="  public static void main(String[] args) {"/>
+		<list key="findhistory">
+			<item value="  public static void main(String[] args) {"/>
+		</list>
+	</section>
+</section>

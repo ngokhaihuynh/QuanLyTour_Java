@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<qualifiedTypeNameHistroy>
+    <fullyQualifiedTypeName name="org.eclipse.jface.text.templates.GlobalTemplateVariables.User"/>
+    <fullyQualifiedTypeName name="User.UserManagement"/>
+    <fullyQualifiedTypeName name="java.beans.Customizer"/>
+    <fullyQualifiedTypeName name="Customer.CustomerManagement"/>
+    <fullyQualifiedTypeName name="Destinations.DestinationListPanel"/>
+    <fullyQualifiedTypeName name="Destinations.DestinationManagement"/>
+    <fullyQualifiedTypeName name="Tour.TourManagement"/>
+    <fullyQualifiedTypeName name="guides.GuideManagement"/>
+    <fullyQualifiedTypeName name="javax.swing.JButton"/>
+    <fullyQualifiedTypeName name="java.awt.print.Book"/>
+    <fullyQualifiedTypeName name="Booking.BookingManagement"/>
+    <fullyQualifiedTypeName name="javax.swing.JPanel"/>
+    <fullyQualifiedTypeName name="Thongke.RevenuePanel"/>
+</qualifiedTypeNameHistroy>
